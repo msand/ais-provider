@@ -1,0 +1,24 @@
+{
+  "name": "ais-provider",
+  "version": "1.0.0",
+  "description": "AIS data provider",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Portchain/ais-provider.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Portchain/ais-provider/issues"
+  },
+  "homepage": "https://github.com/Portchain/ais-provider#readme",
+  "dependencies": {
+    "mkdirp": "0.5.1",
+    "moment": "2.22.2",
+    "request": "2.87.0"
+  }
+}
