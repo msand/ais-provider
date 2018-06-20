@@ -4,7 +4,10 @@
   "description": "AIS data provider",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "test": "npm test",
+    "dev": "node lib/server.js",
+    "build": "next build",
+    "start": "NODE_ENV=production node lib/server.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +20,7 @@
   },
   "homepage": "https://github.com/Portchain/ais-provider#readme",
   "dependencies": {
+    "express": "4.16.3",
     "mkdirp": "0.5.1",
     "moment": "2.22.2",
     "request": "2.87.0"
