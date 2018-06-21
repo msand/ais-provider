@@ -1,9 +1,13 @@
 # ais-provider
 
+The code running https://ais.portchain.com
+
+![Screenshot](screenshot.png "Screenshot")
+
 
 ## Setup
 
-- create a google account at console.cloud.google.com
-- create a bucket <GCP_STORAGE_BUCKET_NAME>
-- enable the API: https://console.cloud.google.com/flows/enableapi?apiid=storage-api.googleapis.com
-
+```sh
+npm install
+AIS_PROVIDER_SECRET=123 DATA_FOLDER="/var/ais_data" node lib/server.js
+```
