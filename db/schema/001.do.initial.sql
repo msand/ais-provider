@@ -9,10 +9,10 @@ CREATE TABLE ais (
   rate_of_turn NUMERIC(6,3),
   speed_over_ground NUMERIC(6,3),
   position_accuracy BOOLEAN,
-  position geography(POINT),
+  longitude NUMERIC(9, 6),
+  latitude NUMERIC(9, 6),
   course_over_ground NUMERIC(6,3),
   true_heading NUMERIC(6,3),
-  time_stamp INT,
   maneuver CHARACTER VARYING,
 
   imo INT,
@@ -24,7 +24,7 @@ CREATE TABLE ais (
   dimension_to_starboard INT,
   dimension_to_port INT,
   destination CHARACTER VARYING,
-  eta TIMESTAMP WITH TIME ZONE,
+  eta CHARACTER VARYING,
   draft NUMERIC(4,1),
   device CHARACTER VARYING,
   

@@ -23,9 +23,9 @@ WITH args AS (
     $19::INTEGER AS dimension_to_starboard,
     $20::INTEGER AS dimension_to_port,
     $21::CHARACTER VARYING AS destination,
-    $22::TIMESTAMP AS eta,
-    $23::NUMERIC(4,1) AS draft
-    $24::CHARACTER VARYING AS device,
+    $22::CHARACTER VARYING AS eta,
+    $23::NUMERIC(4,1) AS draft,
+    $24::CHARACTER VARYING AS device
 )
 INSERT INTO ais (
   mmsi,
@@ -44,15 +44,15 @@ INSERT INTO ais (
 
   imo,
   callsign,
-  ship_name,
-  ship_type,
+  vessel_name,
+  vessel_type,
   dimension_to_bow,
   dimension_to_stern,
   dimension_to_starboard,
   dimension_to_port,
   destination,
   eta,
-  draught,
+  draft,
   device
 ) (
   SELECT 
@@ -72,15 +72,15 @@ INSERT INTO ais (
 
     imo,
     callsign,
-    ship_name,
-    ship_type,
+    vessel_name,
+    vessel_type,
     dimension_to_bow,
     dimension_to_stern,
     dimension_to_starboard,
     dimension_to_port,
     destination,
     eta,
-    draught,
+    draft,
     device
   FROM args
 )
