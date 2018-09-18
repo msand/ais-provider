@@ -83,4 +83,4 @@ INSERT INTO ais (
     draft,
     device
   FROM args
-)
+) ON CONFLICT (mmsi, generated_date) DO NOTHING;
