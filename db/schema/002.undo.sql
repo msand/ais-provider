@@ -1,0 +1,1 @@
+ALTER TABLE ais DROP CONSTRAINT IF EXISTS ais_unique_vessel_entry;

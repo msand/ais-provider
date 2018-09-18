@@ -48,28 +48,17 @@
     #map {position: absolute; top: 50px; right: 0; bottom: 0; left: 0;}
   </style>
   <script src='/js/ajax.js'></script>
-  <script src='/js/mapHelper.js'></script>
 </head>
 <body>
   <header class="title">
     <div class="logo">
       <img width="111px" height="14px" src="https://cdn.portchain.com/logo.svg" />
     </div>
-    <div class="search">
-      <input id="imo" type="text" placeholder="Vessel IMO" on-keyup="keyup" autofocus required pattern="\d{7}"/>
+    <div >
+      This page auto refreshes.
     </div>
-    <div class="vessels">
-      <select id="vessel-list">
-
-      </select>
-    </div>
-    <div class="displayed-dates">
-      Visualizing 
-      <span id="from-date"></span>
-      to
-      <span id="to-date"></span>
-      &nbsp;&nbsp;&nbsp;&nbsp;
-      <button id="view-more-data">View more data</button>
+    <div>
+      Total vessel count: <span id="vessel-count">0</span>
     </div>
   </header>
   <div id="map"></div>
@@ -84,122 +73,74 @@
     });
     olms.apply(map, styleJson);
 
-    function setVesselNames(imo, vesselNames) {
-      const vesselList = document.getElementById('vessel-list')
-      emptyElement(vesselList)
-      vesselNames.forEach((vesselName, idx) => {
-        vesselId = `${imo}/${vesselName}`
-        const option = new Option(vesselName, vesselId, null, /*selected*/idx === 0);
-        if(idx === 0) {
-          activeVessel.vesselId = vesselId
-          fetchVesselAvailableDates(vesselId)
-        }
-        vesselList.appendChild(option)
-      })
-    }
-
     function emptyElement(el) {
       while( el.firstChild ) {
         el.removeChild( el.firstChild );
       }
     }
-    let activeVessel;
+    let renderedLayers = [];
 
     function clearMap() {
-      if(activeVessel && activeVessel.renderedLayers) {
-        activeVessel.renderedLayers.forEach(rl => {
+      if(renderedLayers) {
+        renderedLayers.forEach(rl => {
           map.removeLayer(rl.layer)
         })
-        activeVessel.renderedLayers = []
+        renderedLayers = []
       }
     }
 
-    document.getElementById('imo').addEventListener('keydown', (event) => {
-      if(event.keyCode === 13) {
-        let imo = event.target.value
-        getJSON(`/vessel/list/${imo}`, (vesselNames) => {
-          clearMap()
-          activeVessel = {imo: imo}
-          setVesselNames(imo, vesselNames || [])
-        })
-      }
-
-    })
-    document.getElementById('vessel-list').addEventListener('change', (event) => {
-      activeVessel.vesselId = event.target.value
-
-      clearMap()
-      fetchVesselAvailableDates(event.target.value)
-    })
-    document.getElementById('view-more-data').addEventListener('click', (event) => {
-      if(activeVessel && activeVessel.availableDates && activeVessel.renderedLayers) {
-        const lastLayerRendered = activeVessel.renderedLayers[activeVessel.renderedLayers.length-1]
-        let found = false
-        let lastRenderedIdx = activeVessel.availableDates.findIndex(date => date === lastLayerRendered.date)
-        if(lastRenderedIdx > 0) {
-          renderVesselPath(activeVessel.vesselId, activeVessel.availableDates[lastRenderedIdx-1])
-        }
-      }
-    })
-    function fetchVesselAvailableDates(vesselId) {
-        getJSON(`/vessel/dates/${vesselId}`, (availableDates) => {
-          activeVessel.availableDates = availableDates
-          if(availableDates && availableDates.length > 0) {
-            availableDates.sort()
-            renderVesselPath(vesselId, availableDates[availableDates.length-1])
-          }
-        })
-    }
-
-
-    function renderVesselPath(vesselId, date) {
-      getJSON(`/vessel/path/${vesselId}/${date}`, (aisDataPoints) => {
-        const layer = drawVesselLine(map, aisDataPoints)
-        if(!activeVessel.renderedLayers) {
-          activeVessel.renderedLayers = []
-        }
-        activeVessel.renderedLayers.push({
-          vesselId: vesselId,
-          date: date,
-          layer: layer
-        })
-        if(activeVessel.renderedLayers.length > 30) {
-          const layerToRemove = activeVessel.renderedLayers.shift()
-          map.removeLayer(layerToRemove)
-        }
-        emptyElement(document.getElementById('from-date'))
-        document.getElementById('from-date').appendChild(document.createTextNode(activeVessel.renderedLayers[0].date))
-        emptyElement(document.getElementById('to-date'))
-        document.getElementById('to-date').appendChild(document.createTextNode(activeVessel.renderedLayers[activeVessel.renderedLayers.length-1].date))
-      })
-    }
     const transform = location => ol.proj.transform(location, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'))
 
-    const drawLine = (color, zIndex) => (map, points) => {
-      if (points && points.length > 0) {
-        const geometry = new ol.geom.LineString(points.map(toLocation).map(transform))
-        const layer = new ol.layer.Vector({
-          name:'LinePoints',
-          source: new ol.source.Vector({
-            features: [
-              new ol.Feature({
-                name: 'line-points',
-                geometry,
-              })
-            ]
-          }),
-          style: new ol.style.Style({
-            fill: new ol.style.Fill({ color, weight: 4 }),
-            stroke: new ol.style.Stroke({ color, width: 2 })
-          }),
-          zIndex,
-        })
-        map.addLayer(layer)
-        return layer
-      }
-    }
-    const toLocation = point => ([point.lon, point.lat])
+    const drawVessels = (vessels) => {
 
-    const drawVesselLine = drawLine('#59C3CE', 99)
+      const geometry = new ol.geom.MultiPoint(vessels.map(toLocation).map(transform))
+      const layer = new ol.layer.Vector({
+        name:'VesselPoint',
+        source: new ol.source.Vector({
+          features: [
+            new ol.Feature({
+              name: 'vessel-point',
+              geometry,
+            })
+          ]
+        }),
+        style: new ol.style.Style({
+
+          image: new ol.style.Circle({
+            radius: 2,
+            fill: new ol.style.Fill({
+              color: [255, 204, 102, 1]
+            })
+          }),
+          zIndex: 99
+        }),
+        zIndex: 99
+      })
+      renderedLayers.push(layer)
+      map.addLayer(layer)
+    }
+    const toLocation = point => ([point.longitude, point.latitude])
+
+    function fetchLatestVessels() {
+      getJSON('/last-vessels-fetched', (vessels) => {
+        clearMap()
+        if(vessels) {
+
+          emptyElement(document.getElementById('vessel-count'))
+          document.getElementById('vessel-count').appendChild(document.createTextNode(vessels.length))
+          
+          drawVessels(vessels)
+        } else {
+
+          emptyElement(document.getElementById('vessel-count'))
+          document.getElementById('vessel-count').appendChild(document.createTextNode(0))
+        }
+      })
+      setTimeout(function() {
+        fetchLatestVessels()
+      }, 60000)
+    }
+
+    fetchLatestVessels()
   </script>
 </body>
