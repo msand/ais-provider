@@ -81,7 +81,7 @@
     let renderedLayers = [];
 
     function clearMap() {
-      if(renderedLayers) {
+      if(renderedLayers && renderedLayers.length > 0) {
         renderedLayers.forEach(rl => {
           map.removeLayer(rl.layer)
         })
