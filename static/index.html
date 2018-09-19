@@ -82,8 +82,8 @@
 
     function clearMap() {
       if(renderedLayers && renderedLayers.length > 0) {
-        renderedLayers.forEach(rl => {
-          map.removeLayer(rl.layer)
+        renderedLayers.forEach(layer => {
+          map.removeLayer(layer)
         })
         renderedLayers = []
       }
@@ -92,7 +92,7 @@
     const transform = location => ol.proj.transform(location, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'))
 
     const drawVessels = (vessels) => {
-
+      clearMap()
       const geometry = new ol.geom.MultiPoint(vessels.map(toLocation).map(transform))
       const layer = new ol.layer.Vector({
         name:'VesselPoint',
@@ -123,7 +123,6 @@
 
     function fetchLatestVessels() {
       getJSON('/last-vessels-fetched', (vessels) => {
-        clearMap()
         if(vessels) {
 
           emptyElement(document.getElementById('vessel-count'))
