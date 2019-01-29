@@ -25,7 +25,8 @@ WITH args AS (
     $21::CHARACTER VARYING AS destination,
     $22::CHARACTER VARYING AS eta,
     $23::NUMERIC(4,1) AS draft,
-    $24::CHARACTER VARYING AS device
+    $24::CHARACTER VARYING AS device,
+    'aishub'::TEXT AS data_source
 )
 INSERT INTO ais (
   mmsi,
@@ -53,7 +54,8 @@ INSERT INTO ais (
   destination,
   eta,
   draft,
-  device
+  device,
+  data_source
 ) (
   SELECT 
     mmsi,
@@ -81,6 +83,7 @@ INSERT INTO ais (
     destination,
     eta,
     draft,
-    device
+    device,
+    data_source
   FROM args
-) ON CONFLICT (mmsi, generated_date) DO NOTHING;
+) ON CONFLICT (mmsi, generated_date, data_source) DO NOTHING;
