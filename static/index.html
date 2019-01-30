@@ -146,7 +146,6 @@
     }
 
     function fetchVesselPath(imo, from, to) {
-      clearTimeout(fetchVesselsTimeout)
       clearMap()
       getJSON(`/vessel/path/${imo}/${from}/${to}`, (aisDataPoints) => {
         if(aisDataPoints && aisDataPoints.length > 0) {
@@ -171,8 +170,11 @@
       const imo = vesselPathImo.value
       let month = vesselPathMonth.value
 
+      if(fetchVesselsTimeout) {
+        clearTimeout(fetchVesselsTimeout)
+        fetchVesselsTimeout = null
+      }
       if(!/^\d{7}$/.test(imo)) {
-        fetchLatestVessels()
         return
       }
 
