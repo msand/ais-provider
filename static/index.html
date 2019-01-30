@@ -63,7 +63,8 @@
     </div>
     <div>
       <input id="vessel_path_imo" type="text" name="imo"/>
-      <input id="vessel_path_month" type="date" name="month"/>
+      <input id="vessel_path_from" type="date" name="from"/>
+      <input id="vessel_path_to" type="date" name="to"/>
     </div>
   </header>
   <div id="map"></div>
@@ -161,32 +162,27 @@
     }
 
     const vesselPathImo = document.getElementById('vessel_path_imo')
-    const vesselPathMonth = document.getElementById('vessel_path_month')
+    const vesselPathFrom = document.getElementById('vessel_path_from')
+    const vesselPathTo = document.getElementById('vessel_path_to')
     vesselPathImo.addEventListener('keydown', refreshVesselPathSearch)
     vesselPathImo.addEventListener('change', refreshVesselPathSearch)
-    vesselPathMonth.addEventListener('change', refreshVesselPathSearch)
+    vesselPathFrom.addEventListener('change', refreshVesselPathSearch)
+    vesselPathTo.addEventListener('change', refreshVesselPathSearch)
 
     function refreshVesselPathSearch() {
       const imo = vesselPathImo.value
-      let month = vesselPathMonth.value
-
-      if(fetchVesselsTimeout) {
+      
+      if(!/^\d{7}$/.test(imo)) {
+        return
+      } else if(fetchVesselsTimeout) {
         clearTimeout(fetchVesselsTimeout)
         fetchVesselsTimeout = null
       }
-      if(!/^\d{7}$/.test(imo)) {
-        return
-      }
 
-      if(imo && !month) {
-        vesselPathMonth.value = moment().startOf('month').format('YYYY-MM-DD')
-        month = vesselPathMonth.value
-      }
-      
-      const from = moment(month).startOf('month').format('YYYY-MM-DD')
-      const to = moment(month).endOf('month').format('YYYY-MM-DD')
+      let from = vesselPathFrom.value ? moment(vesselPathFrom.value) : moment().subtract(1, 'week').startOf('day')
+      let to = vesselPathTo.value ? moment(vesselPathTo.value) : moment(from).add(1, 'week').endOf('day')
 
-      fetchVesselPath(imo, from, to)
+      fetchVesselPath(imo, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
     }
     fetchLatestVessels()
   </script>
