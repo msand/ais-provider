@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "AIS data provider",
   "main": "index.js",
+  "engines": {
+    "node": "10.8.0"
+  },
   "scripts": {
     "test": "npm test",
     "dev": "node lib/server.js",
