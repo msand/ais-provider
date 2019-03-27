@@ -26,7 +26,7 @@ WITH args AS (
     $22::CHARACTER VARYING AS eta,
     $23::NUMERIC(4,1) AS draft,
     $24::CHARACTER VARYING AS device,
-    'aishub'::TEXT AS data_source
+    COALESCE($25::TEXT, 'aishub'::TEXT)  AS data_source
 )
 INSERT INTO ais (
   mmsi,

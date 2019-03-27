@@ -20,9 +20,11 @@
   },
   "homepage": "https://github.com/Portchain/ais-provider#readme",
   "dependencies": {
+    "csv-parse": "4.3.4",
     "express": "4.16.3",
     "mkdirp": "0.5.1",
     "moment": "2.22.2",
+    "moment-timezone": "0.5.23",
     "pg": "7.4.3",
     "pg-js": "0.6.0",
     "postgrator": "3.6.0",
