@@ -9,7 +9,6 @@
   "scripts": {
     "test": "npm test",
     "dev": "node lib/server.js",
-    "build": "next build",
     "start": "NODE_ENV=production node lib/server.js"
   },
   "repository": {
