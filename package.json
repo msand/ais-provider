@@ -9,7 +9,7 @@
   "scripts": {
     "test": "npm test",
     "dev": "node lib/server.js",
-    "start": "NODE_ENV=production node lib/server.js"
+    "start": "NODE_ENV=production node --max_old_space_size=$MAX_OLD_SPACE_SIZE lib/server.js"
   },
   "repository": {
     "type": "git",
