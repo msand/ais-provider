@@ -99,7 +99,8 @@
 
     const drawAisMessages = (aisMessages) => {
       clearMap()
-      const geometry = new ol.geom.MultiPoint(aisMessages.map(toLocation).map(project))
+      const projectedPoints = aisMessages.map(toLocation).map(project)
+      const geometry = new ol.geom.MultiPoint(projectedPoints)
       const layer = new ol.layer.Vector({
         name:'VesselPoint',
         source: new ol.source.Vector({
@@ -125,18 +126,48 @@
       renderedLayers.push(layer)
       map.addLayer(layer)
     }
+
+    let portsOfInterestsLayer = null
+    const drawPortsOfInterest = (ports) => {
+      const projectedPoints = ports.filter(p => p.latitude && p.longitude).map(toLocation).map(project)
+      const geometry = new ol.geom.MultiPoint(projectedPoints)
+      if(portsOfInterestsLayer) {
+        map.removeLayer(portsOfInterestsLayer)
+        portsOfInterestsLayer = null
+      }
+      portsOfInterestsLayer = new ol.layer.Vector({
+        name:'PortPoint',
+        source: new ol.source.Vector({
+          features: [
+            new ol.Feature({
+              name: 'port-point',
+              geometry,
+            })
+          ]
+        }),
+        style: new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 7,
+            fill: new ol.style.Fill({
+              color: [190, 190, 190, 1]
+            })
+          }),
+          zIndex: 199
+        }),
+        zIndex: 199
+      })
+      map.addLayer(portsOfInterestsLayer)
+
+    }
     const toLocation = point => ([point.longitude, point.latitude])
     let fetchVesselsTimeout = null
     function fetchLatestVessels() {
       getJSON('/last-vessels-fetched', (vessels) => {
         if(vessels) {
-
           emptyElement(document.getElementById('vessel-count'))
           document.getElementById('vessel-count').appendChild(document.createTextNode(vessels.length))
-          
           drawAisMessages(vessels)
         } else {
-
           emptyElement(document.getElementById('vessel-count'))
           document.getElementById('vessel-count').appendChild(document.createTextNode(0))
         }
@@ -144,6 +175,15 @@
       fetchVesselsTimeout = setTimeout(function() {
         fetchLatestVessels()
       }, 60000)
+    }
+
+
+    function fetchPortsOfInterest() {
+      getJSON('/ports-of-interest', (ports) => {
+        if(ports) {
+          drawPortsOfInterest(ports)
+        }
+      })
     }
 
     function fetchVesselPath(imo, from, to) {
@@ -185,5 +225,6 @@
       fetchVesselPath(imo, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
     }
     fetchLatestVessels()
+    fetchPortsOfInterest()
   </script>
 </body>
