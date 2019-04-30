@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="https://cdn.portchain.com/favicon-v2-16x16.png" sizes="16x16">
   <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,Promise"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js"></script>
-  <script src="https://cdn.klokantech.com/ol-mapbox-style/v2.11.0-pre/olms.js"></script>
+  <script src="https://cdn.klokantech.com/ol-mapbox-style/v4.2.1/olms.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css">
   <style>
@@ -69,162 +69,175 @@
   </header>
   <div id="map"></div>
   <script>
-    var styleJson = 'https://maps.tilehosting.com/c/acc1388a-f434-4591-a190-37f72749c01a/styles/darkmatter/style.json?key=xBuPci3rAEvg7U26TMiQ';
-    var map = new ol.Map({
-      target: 'map',
-      view: new ol.View({
-        center: ol.proj.fromLonLat([0, 0]),
-        zoom: 3
-      })
-    });
-    olms.apply(map, styleJson);
-
-    function emptyElement(el) {
-      while( el.firstChild ) {
-        el.removeChild( el.firstChild );
-      }
-    }
-    let renderedLayers = [];
-
-    function clearMap() {
-      if(renderedLayers && renderedLayers.length > 0) {
-        renderedLayers.forEach(layer => {
-          map.removeLayer(layer)
+    (function() {
+    
+      var styleJson = 'https://maps.tilehosting.com/c/acc1388a-f434-4591-a190-37f72749c01a/styles/darkmatter/style.json?key=xBuPci3rAEvg7U26TMiQ';
+      var map = new ol.Map({
+        target: 'map',
+        view: new ol.View({
+          center: ol.proj.fromLonLat([0, 0]),
+          zoom: 3
         })
-        renderedLayers = []
+      });
+      olms.apply(map, styleJson);
+
+      function emptyElement(el) {
+        while( el.firstChild ) {
+          el.removeChild( el.firstChild );
+        }
       }
-    }
+      let renderedLayers = [];
 
-    const project = location => ol.proj.transform(location, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'))
+      function clearMap() {
+        if(renderedLayers && renderedLayers.length > 0) {
+          renderedLayers.forEach(layer => {
+            map.removeLayer(layer)
+          })
+          renderedLayers = []
+        }
+      }
 
-    const drawAisMessages = (aisMessages) => {
-      clearMap()
-      const projectedPoints = aisMessages.map(toLocation).map(project)
-      const geometry = new ol.geom.MultiPoint(projectedPoints)
-      const layer = new ol.layer.Vector({
-        name:'VesselPoint',
-        source: new ol.source.Vector({
-          features: [
-            new ol.Feature({
-              name: 'vessel-point',
-              geometry,
-            })
-          ]
-        }),
-        style: new ol.style.Style({
+      const project = location => ol.proj.transform(location, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'))
 
-          image: new ol.style.Circle({
-            radius: 2,
-            fill: new ol.style.Fill({
-              color: [255, 204, 102, 1]
-            })
+      const drawAisMessages = (aisMessages) => {
+        clearMap()
+
+        let projectedPoints;
+        let geometry;
+        let layer;
+
+        while(aisMessages.length > 0) {
+          
+          projectedPoints = aisMessages.splice(0, 20000).map(toLocation).map(project)
+          console.log(projectedPoints.length)
+          geometry = new ol.geom.MultiPoint(projectedPoints)
+          layer = new ol.layer.Vector({
+            name:'VesselPoint',
+            source: new ol.source.Vector({
+              features: [
+                new ol.Feature({
+                  name: 'vessel-point',
+                  geometry,
+                })
+              ]
+            }),
+            style: new ol.style.Style({
+
+              image: new ol.style.Circle({
+                radius: 2,
+                fill: new ol.style.Fill({
+                  color: [255, 204, 102, 1]
+                })
+              }),
+              zIndex: 99
+            }),
+            zIndex: 99
+          })
+          renderedLayers.push(layer)
+          map.addLayer(layer)
+        }
+      }
+
+      let portsOfInterestsLayer = null
+      const drawPortsOfInterest = (ports) => {
+        const projectedPoints = ports.filter(p => p.latitude && p.longitude).map(toLocation).map(project)
+        const geometry = new ol.geom.MultiPoint(projectedPoints)
+        if(portsOfInterestsLayer) {
+          map.removeLayer(portsOfInterestsLayer)
+          portsOfInterestsLayer = null
+        }
+        portsOfInterestsLayer = new ol.layer.Vector({
+          name:'PortPoint',
+          source: new ol.source.Vector({
+            features: [
+              new ol.Feature({
+                name: 'port-point',
+                geometry,
+              })
+            ]
           }),
-          zIndex: 99
-        }),
-        zIndex: 99
-      })
-      renderedLayers.push(layer)
-      map.addLayer(layer)
-    }
-
-    let portsOfInterestsLayer = null
-    const drawPortsOfInterest = (ports) => {
-      const projectedPoints = ports.filter(p => p.latitude && p.longitude).map(toLocation).map(project)
-      const geometry = new ol.geom.MultiPoint(projectedPoints)
-      if(portsOfInterestsLayer) {
-        map.removeLayer(portsOfInterestsLayer)
-        portsOfInterestsLayer = null
-      }
-      portsOfInterestsLayer = new ol.layer.Vector({
-        name:'PortPoint',
-        source: new ol.source.Vector({
-          features: [
-            new ol.Feature({
-              name: 'port-point',
-              geometry,
-            })
-          ]
-        }),
-        style: new ol.style.Style({
-          image: new ol.style.Circle({
-            radius: 7,
-            fill: new ol.style.Fill({
-              color: [190, 190, 190, 1]
-            })
+          style: new ol.style.Style({
+            image: new ol.style.Circle({
+              radius: 7,
+              fill: new ol.style.Fill({
+                color: [190, 190, 190, 1]
+              })
+            }),
+            zIndex: 199
           }),
           zIndex: 199
-        }),
-        zIndex: 199
-      })
-      map.addLayer(portsOfInterestsLayer)
+        })
+        map.addLayer(portsOfInterestsLayer)
 
-    }
-    const toLocation = point => ([point.longitude, point.latitude])
-    let fetchVesselsTimeout = null
-    function fetchLatestVessels() {
-      getJSON('/last-vessels-fetched', (vessels) => {
-        if(vessels) {
-          emptyElement(document.getElementById('vessel-count'))
-          document.getElementById('vessel-count').appendChild(document.createTextNode(vessels.length))
-          drawAisMessages(vessels)
-        } else {
-          emptyElement(document.getElementById('vessel-count'))
-          document.getElementById('vessel-count').appendChild(document.createTextNode(0))
-        }
-      })
-      fetchVesselsTimeout = setTimeout(function() {
-        fetchLatestVessels()
-      }, 60000)
-    }
-
-
-    function fetchPortsOfInterest() {
-      getJSON('/ports-of-interest', (ports) => {
-        if(ports) {
-          drawPortsOfInterest(ports)
-        }
-      })
-    }
-
-    function fetchVesselPath(imo, from, to) {
-      clearMap()
-      getJSON(`/vessel/path/${imo}/${from}/${to}`, (aisDataPoints) => {
-        if(aisDataPoints && aisDataPoints.length > 0) {
-          emptyElement(document.getElementById('vessel-count'))
-          document.getElementById('vessel-count').appendChild(document.createTextNode(1))
-          drawAisMessages(aisDataPoints)
-        } else {
-
-          emptyElement(document.getElementById('vessel-count'))
-          document.getElementById('vessel-count').appendChild(document.createTextNode(0))
-        }
-      })
-    }
-
-    const vesselPathImo = document.getElementById('vessel_path_imo')
-    const vesselPathFrom = document.getElementById('vessel_path_from')
-    const vesselPathTo = document.getElementById('vessel_path_to')
-    vesselPathImo.addEventListener('keydown', refreshVesselPathSearch)
-    vesselPathImo.addEventListener('change', refreshVesselPathSearch)
-    vesselPathFrom.addEventListener('change', refreshVesselPathSearch)
-    vesselPathTo.addEventListener('change', refreshVesselPathSearch)
-
-    function refreshVesselPathSearch() {
-      const imo = vesselPathImo.value
-      
-      if(!/^\d{7}$/.test(imo)) {
-        return
-      } else if(fetchVesselsTimeout) {
-        clearTimeout(fetchVesselsTimeout)
-        fetchVesselsTimeout = null
+      }
+      const toLocation = point => ([point.longitude, point.latitude])
+      let fetchVesselsTimeout = null
+      function fetchLatestVessels() {
+        getJSON('/last-vessels-fetched', (vessels) => {
+          if(vessels) {
+            emptyElement(document.getElementById('vessel-count'))
+            document.getElementById('vessel-count').appendChild(document.createTextNode(vessels.length))
+            drawAisMessages(vessels)
+          } else {
+            emptyElement(document.getElementById('vessel-count'))
+            document.getElementById('vessel-count').appendChild(document.createTextNode(0))
+          }
+        })
+        fetchVesselsTimeout = setTimeout(function() {
+          fetchLatestVessels()
+        }, 60000)
       }
 
-      let from = vesselPathFrom.value ? moment(vesselPathFrom.value) : moment().subtract(1, 'week').startOf('day')
-      let to = vesselPathTo.value ? moment(vesselPathTo.value) : moment(from).add(1, 'week').endOf('day')
 
-      fetchVesselPath(imo, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
-    }
-    fetchLatestVessels()
-    fetchPortsOfInterest()
+      function fetchPortsOfInterest() {
+        getJSON('/ports-of-interest', (ports) => {
+          if(ports) {
+            drawPortsOfInterest(ports)
+          }
+        })
+      }
+
+      function fetchVesselPath(imo, from, to) {
+        clearMap()
+        getJSON(`/vessel/path/${imo}/${from}/${to}`, (aisDataPoints) => {
+          if(aisDataPoints && aisDataPoints.length > 0) {
+            emptyElement(document.getElementById('vessel-count'))
+            document.getElementById('vessel-count').appendChild(document.createTextNode(1))
+            drawAisMessages(aisDataPoints)
+          } else {
+
+            emptyElement(document.getElementById('vessel-count'))
+            document.getElementById('vessel-count').appendChild(document.createTextNode(0))
+          }
+        })
+      }
+
+      const vesselPathImo = document.getElementById('vessel_path_imo')
+      const vesselPathFrom = document.getElementById('vessel_path_from')
+      const vesselPathTo = document.getElementById('vessel_path_to')
+      vesselPathImo.addEventListener('keydown', refreshVesselPathSearch)
+      vesselPathImo.addEventListener('change', refreshVesselPathSearch)
+      vesselPathFrom.addEventListener('change', refreshVesselPathSearch)
+      vesselPathTo.addEventListener('change', refreshVesselPathSearch)
+
+      function refreshVesselPathSearch() {
+        const imo = vesselPathImo.value
+        
+        if(!/^\d{7}$/.test(imo)) {
+          return
+        } else if(fetchVesselsTimeout) {
+          clearTimeout(fetchVesselsTimeout)
+          fetchVesselsTimeout = null
+        }
+
+        let from = vesselPathFrom.value ? moment(vesselPathFrom.value) : moment().subtract(1, 'week').startOf('day')
+        let to = vesselPathTo.value ? moment(vesselPathTo.value) : moment(from).add(1, 'week').endOf('day')
+
+        fetchVesselPath(imo, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
+      }
+      fetchLatestVessels()
+      fetchPortsOfInterest()
+    })();
   </script>
 </body>
+</html>
