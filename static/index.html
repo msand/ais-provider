@@ -145,22 +145,22 @@
         }
 
         /** Manage interaction, vessel click **/
-        if(selectVesselByClickInteraction) {
-          map.removeInteraction(selectByClickInteraction);
-        }
-        selectVesselByClickInteraction = new ol.interaction.Select({
-          condition: ol.events.condition.click,
-          layers: renderedLayers
-        });
-        map.addInteraction(selectByClickInteraction);
-        selectByClickInteraction.on('select', function(e) {
-          const selected = e.selected
-          if(selected && selected[0] && selected[0].get && selected[0].get('name')) {
-            document.getElementById('vessel_path_imo').value = selected[0].get('name')
-          } else {
-            document.getElementById('vessel_path_imo').value = ''
-          }
-        });
+        // if(selectVesselByClickInteraction) {
+        //   map.removeInteraction(selectVesselByClickInteraction);
+        // }
+        // selectVesselByClickInteraction = new ol.interaction.Select({
+        //   condition: ol.events.condition.click,
+        //   layers: renderedLayers
+        // });
+        // map.addInteraction(selectVesselByClickInteraction);
+        // selectVesselByClickInteraction.on('select', function(e) {
+        //   const selected = e.selected
+        //   if(selected && selected[0] && selected[0].get && selected[0].get('name')) {
+        //     document.getElementById('vessel_path_imo').value = selected[0].get('name')
+        //   } else {
+        //     document.getElementById('vessel_path_imo').value = ''
+        //   }
+        // });
       }
 
 
