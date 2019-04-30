@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/Portchain/ais-provider#readme",
   "dependencies": {
+    "body-parser": "1.19.0",
     "csv-parse": "4.3.4",
     "express": "4.16.3",
     "mkdirp": "0.5.1",

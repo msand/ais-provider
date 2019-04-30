@@ -62,9 +62,12 @@
       Total vessel count: <span id="vessel-count">0</span>
     </div>
     <div>
-      <input id="vessel_path_imo" type="text" name="imo"/>
+      <input id="vessel_path_imo" type="text" placeholder="IMO" name="imo"/>
+      <input id="data_source" type="text" placeholder="Data source" name="dataSource"/>
+      <input id="port_un_locode" type="text" placeholder="Port UN/LOCODE" name="portUnLocode"/>
       <input id="vessel_path_from" type="date" name="from"/>
       <input id="vessel_path_to" type="date" name="to"/>
+      <button id="load_data">Load data</button>
     </div>
   </header>
   <div id="map"></div>
@@ -99,6 +102,11 @@
 
       const project = location => ol.proj.transform(location, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'))
 
+
+
+      let selectVesselByClickInteraction;
+      
+
       const drawAisMessages = (aisMessages) => {
         clearMap()
 
@@ -122,7 +130,6 @@
               ]
             }),
             style: new ol.style.Style({
-
               image: new ol.style.Circle({
                 radius: 2,
                 fill: new ol.style.Fill({
@@ -136,25 +143,55 @@
           renderedLayers.push(layer)
           map.addLayer(layer)
         }
+
+        /** Manage interaction, vessel click **/
+        if(selectVesselByClickInteraction) {
+          map.removeInteraction(selectByClickInteraction);
+        }
+        selectVesselByClickInteraction = new ol.interaction.Select({
+          condition: ol.events.condition.click,
+          layers: renderedLayers
+        });
+        map.addInteraction(selectByClickInteraction);
+        selectByClickInteraction.on('select', function(e) {
+          const selected = e.selected
+          if(selected && selected[0] && selected[0].get && selected[0].get('name')) {
+            document.getElementById('vessel_path_imo').value = selected[0].get('name')
+          } else {
+            document.getElementById('vessel_path_imo').value = ''
+          }
+        });
       }
 
-      let portsOfInterestsLayer = null
+
+      const portGeometry = (port) => {
+        const projectedPoints = project(toLocation(port))
+        const geometry = new ol.geom.Point(projectedPoints)
+        return geometry
+      }
+      const portFeature = (port) => {
+        return new ol.Feature({
+          name: port.unLocode,
+          geometry: portGeometry(port)
+        })
+      }
+
+      let portsOfInterestsLayers = []
       const drawPortsOfInterest = (ports) => {
-        const projectedPoints = ports.filter(p => p.latitude && p.longitude).map(toLocation).map(project)
-        const geometry = new ol.geom.MultiPoint(projectedPoints)
-        if(portsOfInterestsLayer) {
-          map.removeLayer(portsOfInterestsLayer)
-          portsOfInterestsLayer = null
+
+        if(portsOfInterestsLayers.length > 0) {
+          portsOfInterestsLayers.forEach((layer) => {
+            map.removeLayer(layer)
+          })
+          portsOfInterestsLayers = []
         }
-        portsOfInterestsLayer = new ol.layer.Vector({
+          
+
+        const features = ports.filter(p => p.latitude && p.longitude).map(portFeature)
+        const layer = new ol.layer.Vector({
           name:'PortPoint',
           source: new ol.source.Vector({
-            features: [
-              new ol.Feature({
-                name: 'port-point',
-                geometry,
-              })
-            ]
+            features: features
           }),
           style: new ol.style.Style({
             image: new ol.style.Circle({
@@ -167,9 +204,25 @@
           }),
           zIndex: 199
         })
-        map.addLayer(portsOfInterestsLayer)
+        map.addLayer(layer)
 
+        portsOfInterestsLayers.push(layer)
+
+        var selectByClickInteraction = new ol.interaction.Select({
+          condition: ol.events.condition.click,
+          layers: portsOfInterestsLayers
+        });
+        map.addInteraction(selectByClickInteraction);
+        selectByClickInteraction.on('select', function(e) {
+          const selected = e.selected
+          if(selected && selected[0] && selected[0].get && selected[0].get('name')) {
+            document.getElementById('port_un_locode').value = selected[0].get('name')
+          } else {
+            document.getElementById('port_un_locode').value = ''
+          }
+        });
       }
+
       const toLocation = point => ([point.longitude, point.latitude])
       let fetchVesselsTimeout = null
       function fetchLatestVessels() {
@@ -197,35 +250,36 @@
         })
       }
 
-      function fetchVesselPath(imo, from, to) {
+      function fetchAISData(imo, dataSource, portUnLocode, from, to) {
         clearMap()
-        getJSON(`/vessel/path/${imo}/${from}/${to}`, (aisDataPoints) => {
+        postJSON('/ais-data', {
+          imo, from, to, dataSource, portUnLocode
+        }, (aisDataPoints) => {
           if(aisDataPoints && aisDataPoints.length > 0) {
             emptyElement(document.getElementById('vessel-count'))
             document.getElementById('vessel-count').appendChild(document.createTextNode(1))
             drawAisMessages(aisDataPoints)
           } else {
-
             emptyElement(document.getElementById('vessel-count'))
             document.getElementById('vessel-count').appendChild(document.createTextNode(0))
           }
         })
       }
 
+      const dataSourceEl = document.getElementById('data_source')
+      const portEl = document.getElementById('port_un_locode')
       const vesselPathImo = document.getElementById('vessel_path_imo')
       const vesselPathFrom = document.getElementById('vessel_path_from')
       const vesselPathTo = document.getElementById('vessel_path_to')
-      vesselPathImo.addEventListener('keydown', refreshVesselPathSearch)
-      vesselPathImo.addEventListener('change', refreshVesselPathSearch)
-      vesselPathFrom.addEventListener('change', refreshVesselPathSearch)
-      vesselPathTo.addEventListener('change', refreshVesselPathSearch)
+      const loadDataEl = document.getElementById('load_data')
+      loadDataEl.addEventListener('click', refreshVesselPathSearch)
 
       function refreshVesselPathSearch() {
-        const imo = vesselPathImo.value
+        const imo = vesselPathImo.value || null
+        const dataSource = dataSourceEl.value || null
+        const portUnLocode = portEl.value || null
         
-        if(!/^\d{7}$/.test(imo)) {
-          return
-        } else if(fetchVesselsTimeout) {
+        if(fetchVesselsTimeout) {
           clearTimeout(fetchVesselsTimeout)
           fetchVesselsTimeout = null
         }
@@ -233,7 +287,7 @@
         let from = vesselPathFrom.value ? moment(vesselPathFrom.value) : moment().subtract(1, 'week').startOf('day')
         let to = vesselPathTo.value ? moment(vesselPathTo.value) : moment(from).add(1, 'week').endOf('day')
 
-        fetchVesselPath(imo, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
+        fetchAISData(imo, dataSource, portUnLocode, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
       }
       fetchLatestVessels()
       fetchPortsOfInterest()
