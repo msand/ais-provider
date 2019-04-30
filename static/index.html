@@ -117,7 +117,6 @@
         while(aisMessages.length > 0) {
           
           projectedPoints = aisMessages.splice(0, 20000).map(toLocation).map(project)
-          console.log(projectedPoints.length)
           geometry = new ol.geom.MultiPoint(projectedPoints)
           layer = new ol.layer.Vector({
             name:'VesselPoint',
@@ -178,7 +177,7 @@
 
       let portsOfInterestsLayers = []
       const drawPortsOfInterest = (ports) => {
-
+        console.log('Ports:', ports.length)
         if(portsOfInterestsLayers.length > 0) {
           portsOfInterestsLayers.forEach((layer) => {
             map.removeLayer(layer)
@@ -290,9 +289,7 @@
         fetchAISData(imo, dataSource, portUnLocode, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
       }
       fetchLatestVessels()
-      setTimeout(() => {
-        fetchPortsOfInterest()
-      }, 10000)
+      fetchPortsOfInterest()
       
     })();
   </script>
