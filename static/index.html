@@ -290,7 +290,10 @@
         fetchAISData(imo, dataSource, portUnLocode, from.format('YYYY-MM-DD'), to.format('YYYY-MM-DD'))
       }
       fetchLatestVessels()
-      fetchPortsOfInterest()
+      setTimeout(() => {
+        fetchPortsOfInterest()
+      }, 10000)
+      
     })();
   </script>
 </body>
